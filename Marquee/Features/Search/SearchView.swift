@@ -15,7 +15,7 @@ struct SearchView: View {
                 if trimmed.isEmpty {
                     grid(model.latest, prefix: "latest")
                 } else if results.isEmpty && searched == trimmed {
-                    Text("无结果").caption(13).padding(.top, 120)
+                    Text("No results").caption(13).padding(.top, 120)
                 } else {
                     grid(results, prefix: "search")
                 }
@@ -23,9 +23,9 @@ struct SearchView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.immediately)
             .background(Color.black)
-            .navigationTitle(trimmed.isEmpty ? "最新入库" : "搜索")
+            .navigationTitle(trimmed.isEmpty ? "Recently Added" : "Search")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: "片名")
+            .searchable(text: $query, prompt: "Title")
             .task(id: trimmed) { await search() }
         }
     }

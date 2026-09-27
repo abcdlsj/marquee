@@ -57,7 +57,7 @@ struct YearView: View {
     private func topBar(_ stats: YearStats) -> some View {
         HStack(spacing: 8) {
             Menu {
-                Picker("年份", selection: $year) {
+                Picker("Year", selection: $year) {
                     ForEach(years.reversed(), id: \.self) { Text(String($0)).tag($0) }
                 }
             } label: {
@@ -82,10 +82,10 @@ struct YearView: View {
 
     private func statRow(_ s: YearStats) -> some View {
         HStack(alignment: .top, spacing: 0) {
-            stat(s.count, "部")
-            stat(s.hours, "小时")
-            stat(s.activeDays, "天")
-            stat(s.longestStreak, "连续")
+            stat(s.count, "films")
+            stat(s.hours, "hours")
+            stat(s.activeDays, "days")
+            stat(s.longestStreak, "streak")
         }
         .padding(.horizontal, 24)
     }
@@ -129,7 +129,7 @@ private struct MonthSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text("\(month) 月").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.fg)
+                Text(MonthName.full[month - 1]).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.fg)
                 Spacer()
                 Text("\(movies.count)").caption(12).monospacedDigit()
             }
@@ -139,7 +139,7 @@ private struct MonthSection: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Poster(movie: m, cornerRadius: 3)
                             if let d = m.playedDate {
-                                Text("\(Calendar.current.component(.day, from: d)) 日").caption(10.5).monospacedDigit()
+                                Text("\(MonthName.en[month - 1]) \(Calendar.current.component(.day, from: d))").caption(10.5).monospacedDigit()
                             }
                         }
                     }

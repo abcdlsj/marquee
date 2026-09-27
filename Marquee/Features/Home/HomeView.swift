@@ -18,7 +18,7 @@ struct HomeView: View {
                 topBar
                 if favorites.isEmpty {
                     Spacer()
-                    Text("暂无收藏").caption(13)
+                    Text("No favorites").caption(13)
                     Spacer()
                 } else if wall {
                     PosterWall(movies: favorites)
@@ -35,7 +35,7 @@ struct HomeView: View {
 
     private var topBar: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("收藏").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.fg)
+            Text("Collection").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.fg)
             Text("\(favorites.count)").font(.system(size: 17, weight: .regular)).monospacedDigit().foregroundStyle(Theme.tertiary)
             Spacer()
             Button {
@@ -104,7 +104,7 @@ struct HomeView: View {
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(Theme.fg)
                     .lineLimit(1)
-                Text([m.year.map(String.init), m.runtimeMinutes.map { "\($0) 分钟" }].compactMap { $0 }.joined(separator: "  ·  "))
+                Text([m.year.map(String.init), m.runtimeMinutes.map { "\($0) min" }].compactMap { $0 }.joined(separator: "  ·  "))
                     .caption(12, Theme.secondary)
                 Text(String(format: "%d / %d", (favorites.firstIndex(of: m) ?? 0) + 1, favorites.count))
                     .caption(10.5)

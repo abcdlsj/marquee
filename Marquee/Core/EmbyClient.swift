@@ -7,9 +7,9 @@ nonisolated enum EmbyError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .badURL: "服务器地址无效"
+        case .badURL: "Invalid server address"
         case .http(let code, let body): "HTTP \(code)" + (body.isEmpty ? "" : "：\(body.prefix(120))")
-        case .notSignedIn: "尚未登录"
+        case .notSignedIn: "Not signed in"
         }
     }
 }
@@ -177,7 +177,8 @@ nonisolated final class EmbyClient: Sendable {
             path = "Items/\(movie.id)/Images/Backdrop/0"
         default:
             tag = movie.imageTags?[kind.rawValue]
-            path = "Items/\(movie.id)/Images/\(kind.rawValue)"
+            // The indexed form serves the original; the bare `/Images/Primary` is downscaled (to 450px tall) by some servers.
+            path = kind == .logo ? "Items/\(movie.id)/Images/Logo" : "Items/\(movie.id)/Images/\(kind.rawValue)/0"
         }
         guard let tag else { return nil }
         var q = ["tag": tag, "quality": "\(quality)", "api_key": token]

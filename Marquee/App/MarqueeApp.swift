@@ -25,10 +25,10 @@ struct RootView: View {
         switch model.phase {
         case .ready:
             TabView(selection: $tab) {
-                Tab("收藏", systemImage: "rectangle.portrait.on.rectangle.portrait", value: .collection) {
+                Tab("Collection", systemImage: "rectangle.portrait.on.rectangle.portrait", value: .collection) {
                     HomeView()
                 }
-                Tab("年度", systemImage: "square.grid.3x3", value: .year) {
+                Tab("Year", systemImage: "square.grid.3x3", value: .year) {
                     YearView()
                 }
                 Tab(value: .search, role: .search) {
@@ -92,10 +92,10 @@ struct MovieLink<Label: View>: View {
         .buttonStyle(PressableStyle())
         .contextMenu {
             let m = model.current(movie)
-            Button(m.isFavorite ? "取消收藏" : "收藏", systemImage: m.isFavorite ? "heart.slash" : "heart") {
+            Button(m.isFavorite ? "Unfavorite" : "Favorite", systemImage: m.isFavorite ? "heart.slash" : "heart") {
                 Task { await model.toggleFavorite(m) }
             }
-            Button(m.isPlayed ? "标记为未看" : "今天看过", systemImage: m.isPlayed ? "eye.slash" : "checkmark") {
+            Button(m.isPlayed ? "Mark Unwatched" : "Watched Today", systemImage: m.isPlayed ? "eye.slash" : "checkmark") {
                 Task { await model.setPlayed(m, at: m.isPlayed ? nil : .now) }
             }
         } preview: {

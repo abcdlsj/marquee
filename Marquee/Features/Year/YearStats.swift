@@ -69,5 +69,6 @@ struct YearStats {
 }
 
 enum MonthName {
-    static let en = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    static let en = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    static let full = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 }

@@ -9,7 +9,7 @@ struct YearShareStudio: View {
     private var picks: [Movie] { Array(stats.movies.suffix(12).reversed()) }
 
     var body: some View {
-        ShareStage(titles: ["黑", "白"], ready: ready, exportName: "\(stats.year)") { i in
+        ShareStage(titles: ["Black", "White"], ready: ready, exportName: "\(stats.year)") { i in
             YearTemplate(stats: stats, picks: picks, posters: posters, light: i == 1)
         }
         .task {
@@ -41,9 +41,9 @@ struct YearTemplate: View {
                 .padding(.top, 34)
 
             HStack(alignment: .top, spacing: 0) {
-                stat(stats.count, "部")
-                stat(stats.hours, "小时")
-                stat(stats.activeDays, "天")
+                stat(stats.count, "films")
+                stat(stats.hours, "hours")
+                stat(stats.activeDays, "days")
             }
             .padding(.top, 22)
 

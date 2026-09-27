@@ -9,7 +9,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("服务器") {
+                Section("Servers") {
                     ForEach(model.servers) { server in
                         Button {
                             if server.id != model.activeID { model.activate(server) }
@@ -24,21 +24,21 @@ struct SettingsView: View {
                             }
                         }
                         .swipeActions {
-                            Button("删除", systemImage: "trash", role: .destructive) { model.remove(server) }
-                            Button("编辑", systemImage: "pencil") { editing = server }
+                            Button("Delete", systemImage: "trash", role: .destructive) { model.remove(server) }
+                            Button("Edit", systemImage: "pencil") { editing = server }
                         }
                     }
-                    Button("添加服务器") {
+                    Button("Add Server") {
                         editing = ServerConfig(name: "", url: "", username: "", password: "")
                     }
                     .foregroundStyle(Theme.cool)
                 }
             }
-            .navigationTitle("设置")
+            .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("完成", systemImage: "checkmark") { dismiss() }
+                    Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
             .sheet(item: $editing) { ServerForm(server: $0) }
@@ -70,28 +70,28 @@ struct ServerForm: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("名称", text: $server.name)
-                    TextField("地址", text: $server.url, prompt: Text("https://emby.example.com"))
+                    TextField("Name", text: $server.name)
+                    TextField("Address", text: $server.url, prompt: Text("https://emby.example.com"))
                         .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
                 Section {
-                    TextField("用户名", text: $server.username)
+                    TextField("Username", text: $server.username)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    SecureField("密码", text: $server.password)
+                    SecureField("Password", text: $server.password)
                 }
                 if let error {
                     Section { Text(error).font(.footnote).foregroundStyle(Theme.secondary) }
                 }
             }
-            .navigationTitle(model.servers.contains { $0.id == server.id } ? "编辑服务器" : "添加服务器")
+            .navigationTitle(model.servers.contains { $0.id == server.id } ? "Edit Server" : "Add Server")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消", systemImage: "xmark") { dismiss() }
+                    Button("Cancel", systemImage: "xmark") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if testing { ProgressView() } else {
-                        Button("连接", systemImage: "checkmark") { Task { await save() } }
+                        Button("Connect", systemImage: "checkmark") { Task { await save() } }
                             .disabled(server.url.isEmpty || server.username.isEmpty)
                     }
                 }
@@ -123,7 +123,7 @@ struct WelcomeView: View {
         VStack(spacing: 28) {
             Spacer()
             Text("MARQUEE").font(.system(size: 13, weight: .medium)).tracking(5).foregroundStyle(Theme.fg)
-            Button("连接 Emby 服务器") { adding = true }
+            Button("Connect to Emby") { adding = true }
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.secondary)
             Spacer()
@@ -146,8 +146,8 @@ struct SplashView: View {
             if case .failed(let msg) = phase {
                 Text(msg).caption(11).multilineTextAlignment(.center).padding(.horizontal, 48)
                 HStack(spacing: 28) {
-                    Button("重试") { Task { await model.connect() } }
-                    Button("服务器") { showSettings = true }
+                    Button("Retry") { Task { await model.connect() } }
+                    Button("Servers") { showSettings = true }
                 }
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.secondary)

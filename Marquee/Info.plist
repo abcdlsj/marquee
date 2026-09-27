@@ -34,9 +34,9 @@
 		<true/>
 	</dict>
 	<key>NSMotionUsageDescription</key>
-	<string>海报随手机倾斜产生景深效果</string>
+	<string>Tilting the phone adds depth to posters.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>保存生成的分享海报到相册</string>
+	<string>Save share posters to your photo library.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

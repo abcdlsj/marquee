@@ -38,8 +38,8 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
-        NSMotionUsageDescription: 海报随手机倾斜产生景深效果
-        NSPhotoLibraryAddUsageDescription: 保存生成的分享海报到相册
+        NSMotionUsageDescription: Tilting the phone adds depth to posters.
+        NSPhotoLibraryAddUsageDescription: Save share posters to your photo library.
         MarqueeSeedName: $(MARQUEE_SEED_NAME)
         MarqueeSeedURL: $(MARQUEE_SEED_URL)
         MarqueeSeedUser: $(MARQUEE_SEED_USER)

@@ -7,7 +7,7 @@ struct ShareStudio: View {
     @State private var ready = false
 
     var body: some View {
-        ShareStage(titles: ["全幅", "白框", "黑框"], ready: ready, exportName: movie.name) { i in
+        ShareStage(titles: ["Full", "White", "Black"], ready: ready, exportName: movie.name) { i in
             switch i {
             case 0: FullBleedTemplate(movie: movie, poster: poster)
             case 1: MatTemplate(movie: movie, poster: poster, light: true)
@@ -35,7 +35,7 @@ private struct Print: View {
 
 private extension Movie {
     var shareMeta: String {
-        [year.map(String.init), playedDate.map { "看过于 \($0.dotted)" }].compactMap { $0 }.joined(separator: "  ·  ")
+        [year.map(String.init), playedDate.map { "Watched \($0.dotted)" }].compactMap { $0 }.joined(separator: "  ·  ")
     }
 }
 

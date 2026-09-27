@@ -38,9 +38,9 @@ struct MovieDetailView: View {
         .fullScreenCover(isPresented: $showPoster) { PosterViewer(movie: m) }
         .fullScreenCover(isPresented: $showShare) { ShareStudio(movie: m) }
         .sheet(isPresented: $pickDate) { WatchDateSheet(movie: m).presentationDetents([.medium]) }
-        .confirmationDialog("看过于 \(m.playedDate?.dotted ?? "")", isPresented: $confirmUnwatch, titleVisibility: .visible) {
-            Button("修改日期") { pickDate = true }
-            Button("标记为未看", role: .destructive) { Task { await model.setPlayed(m, at: nil) } }
+        .confirmationDialog("Watched \(m.playedDate?.dotted ?? "")", isPresented: $confirmUnwatch, titleVisibility: .visible) {
+            Button("Change Date") { pickDate = true }
+            Button("Mark Unwatched", role: .destructive) { Task { await model.setPlayed(m, at: nil) } }
         }
         .sensoryFeedback(.impact(weight: .light), trigger: m.isFavorite)
         .sensoryFeedback(.success, trigger: watchedPulse)
@@ -91,8 +91,8 @@ struct MovieDetailView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                credit("导演", m.directors.prefix(2))
-                credit("主演", m.cast.prefix(4))
+                credit("Director", m.directors.prefix(2))
+                credit("Cast", m.cast.prefix(4))
             }
             .padding(.top, 24)
         }
@@ -101,10 +101,10 @@ struct MovieDetailView: View {
     private var meta: String {
         var parts: [String] = []
         if let y = m.year { parts.append(String(y)) }
-        if let r = m.runtimeMinutes { parts.append("\(r) 分钟") }
+        if let r = m.runtimeMinutes { parts.append("\(r) min") }
         if let g = m.genres?.first { parts.append(g) }
         if let c = m.communityRating { parts.append(String(format: "%.1f", c)) }
-        if let d = m.playedDate { parts.append("看过于 \(d.dotted)") }
+        if let d = m.playedDate { parts.append("Watched \(d.dotted)") }
         return parts.joined(separator: "  ·  ")
     }
 
@@ -123,12 +123,12 @@ struct MovieDetailView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
-            Button("收藏", systemImage: m.isFavorite ? "heart.fill" : "heart") {
+            Button("Favorite", systemImage: m.isFavorite ? "heart.fill" : "heart") {
                 Task { await model.toggleFavorite(m) }
             }
             .tint(m.isFavorite ? Theme.cool : Theme.fg)
 
-            Button("看过", systemImage: m.isPlayed ? "checkmark.circle.fill" : "checkmark.circle") {
+            Button("Watched", systemImage: m.isPlayed ? "checkmark.circle.fill" : "checkmark.circle") {
                 if m.isPlayed { confirmUnwatch = true } else {
                     watchedPulse += 1
                     Task { await model.setPlayed(m, at: .now) }
@@ -136,10 +136,10 @@ struct MovieDetailView: View {
             }
             .tint(m.isPlayed ? Theme.cool : Theme.fg)
             .contextMenu {
-                Button("选择日期", systemImage: "calendar") { pickDate = true }
+                Button("Choose Date", systemImage: "calendar") { pickDate = true }
             }
 
-            Button("分享", systemImage: "square.and.arrow.up") { showShare = true }
+            Button("Share", systemImage: "square.and.arrow.up") { showShare = true }
         }
     }
 }
@@ -152,14 +152,14 @@ struct WatchDateSheet: View {
 
     var body: some View {
         NavigationStack {
-            DatePicker("观看日期", selection: $date, in: ...Date.now, displayedComponents: .date)
+            DatePicker("Watched On", selection: $date, in: ...Date.now, displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .padding(.horizontal)
-                .navigationTitle("观看日期")
+                .navigationTitle("Watched On")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("完成", systemImage: "checkmark") {
+                        Button("Done", systemImage: "checkmark") {
                             Task { await model.setPlayed(movie, at: date) }
                             dismiss()
                         }
