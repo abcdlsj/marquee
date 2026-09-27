@@ -12,4 +12,4 @@ scripts/install-ios.sh --simulator  # booted simulator
 scripts/install-ios.sh --no-seed    # add servers manually in the app
 ```
 
-The seed is read from `~/.ember/servers.json` at build time and baked into the debug build's Info.plist; the app moves it into the Keychain on first launch.
+The Emby seed is read from `~/.ember/servers.json`, and the TMDB key from `$MARQUEE_TMDB_KEY` or `~/.config/marquee/tmdb_key`, at build time. Both are baked into the debug build's Info.plist and moved to the Keychain on first launch. The TMDB key can also be entered in Settings.

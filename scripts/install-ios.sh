@@ -12,7 +12,7 @@ Options:
   --device <udid>   Target device (env: MARQUEE_IOS_DEVICE). Default: first available iPhone
   --team <id>       Development team (env: DEVELOPMENT_TEAM). Default: from the Apple Development cert
   --simulator       Build for the booted simulator instead, install and launch there
-  --no-seed         Don't bake the Ember server into the build
+  --no-seed         Don't bake the Ember server or TMDB key into the build
   --no-launch       Install only
   -h, --help        Show this help
 USAGE
@@ -58,19 +58,24 @@ PY
 )"
     echo "Seed     : ${MARQUEE_BUILD_SEED_NAME:-?} (${MARQUEE_BUILD_SEED_URL:-?})"
 fi
+if [[ "$seed" == true ]]; then
+    tmdb_file="$HOME/.config/marquee/tmdb_key"
+    if [[ -z "${MARQUEE_TMDB_KEY:-}" && -f "$tmdb_file" ]]; then MARQUEE_TMDB_KEY="$(tr -d '[:space:]' < "$tmdb_file")"; fi
+    export MARQUEE_BUILD_SEED_TMDB_KEY="${MARQUEE_TMDB_KEY:-}"
+    [[ -n "$MARQUEE_BUILD_SEED_TMDB_KEY" ]] && echo "TMDB     : key provided"
+fi
 seed_settings=(
     'MARQUEE_SEED_NAME=$(MARQUEE_BUILD_SEED_NAME)'
     'MARQUEE_SEED_URL=$(MARQUEE_BUILD_SEED_URL)'
     'MARQUEE_SEED_USER=$(MARQUEE_BUILD_SEED_USER)'
     'MARQUEE_SEED_PASSWORD=$(MARQUEE_BUILD_SEED_PASSWORD)'
+    'MARQUEE_SEED_TMDB_KEY=$(MARQUEE_BUILD_SEED_TMDB_KEY)'
 )
 
 redact() {
-    if [[ -n "${MARQUEE_BUILD_SEED_PASSWORD:-}" ]]; then
-        MARQUEE_REDACT="$MARQUEE_BUILD_SEED_PASSWORD" perl -pe 's/\Q$ENV{MARQUEE_REDACT}\E/[redacted]/g'
-    else
-        cat
-    fi
+    MARQUEE_REDACT="${MARQUEE_BUILD_SEED_PASSWORD:-}" MARQUEE_REDACT2="${MARQUEE_BUILD_SEED_TMDB_KEY:-}" perl -pe '
+        s/\Q$ENV{MARQUEE_REDACT}\E/[redacted]/g if length $ENV{MARQUEE_REDACT};
+        s/\Q$ENV{MARQUEE_REDACT2}\E/[redacted]/g if length $ENV{MARQUEE_REDACT2};'
 }
 
 build() {

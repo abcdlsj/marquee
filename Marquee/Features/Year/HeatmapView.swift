@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// A year of evenings as a 7 × 53 grid, folded into two half-year bands to fit a phone.
+/// A year of evenings as a 7 × 53 grid. Folded: two half-year bands (whole year at a glance).
+/// Unfolded: one row sized to show half a year, scrolling left into earlier months.
 struct HeatmapView: View {
     let stats: YearStats
     var cell: CGFloat
@@ -10,9 +11,13 @@ struct HeatmapView: View {
     var ink: Color = .white
     var selected: Int? = nil
     var animated = true
+    var folded = true
+    /// Side margin for the unfolded row; the scrolling window is clipped to it.
+    var inset: CGFloat = 0
     var onSelect: ((Int) -> Void)? = nil
 
     @State private var lit = false
+    @State private var anchorWeek: Int?
 
     /// Cell edge that makes a half-year band (27 weeks) exactly `width` wide.
     static func cellSize(width: CGFloat, gap: CGFloat = 2.5) -> CGFloat {
@@ -22,28 +27,50 @@ struct HeatmapView: View {
 
     var body: some View {
         let weeks = stats.weeks
-        let half = (weeks.count + 1) / 2
-        VStack(alignment: .leading, spacing: cell * 1.1) {
-            ForEach([0, half], id: \.self) { start in
-                let band = Array(weeks[start..<min(weeks.count, start + half)])
-                VStack(alignment: .leading, spacing: 5) {
-                    monthLabels(band)
-                    HStack(alignment: .top, spacing: gap) {
-                        ForEach(band.indices, id: \.self) { w in
-                            VStack(spacing: gap) {
-                                ForEach(0..<7, id: \.self) { d in
-                                    cellView(band[w][d])
-                                }
-                            }
-                            .opacity(lit || !animated ? 1 : 0)
-                            .scaleEffect(lit || !animated ? 1 : 0.5, anchor: .center)
-                            .animation(.spring(duration: 0.5, bounce: 0.35).delay(Double(start + w) * 0.014), value: lit)
-                        }
+        Group {
+            if folded {
+                let half = (weeks.count + 1) / 2
+                VStack(alignment: .leading, spacing: cell * 1.1) {
+                    ForEach([0, half], id: \.self) { start in
+                        band(Array(weeks[start..<min(weeks.count, start + half)]), offset: start)
                     }
                 }
+            } else {
+                ScrollView(.horizontal) {
+                    band(weeks, offset: 0)
+                }
+                .scrollIndicators(.hidden)
+                .scrollPosition(id: $anchorWeek, anchor: .trailing)
+                .onAppear { anchorWeek = currentWeek(in: weeks) }
+                .padding(.horizontal, inset)
             }
         }
         .onAppear { lit = true }
+    }
+
+    private func band(_ weeks: [[Date?]], offset: Int) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            monthLabels(weeks)
+            HStack(alignment: .top, spacing: gap) {
+                ForEach(weeks.indices, id: \.self) { w in
+                    VStack(spacing: gap) {
+                        ForEach(0..<7, id: \.self) { d in
+                            cellView(weeks[w][d])
+                        }
+                    }
+                    .opacity(lit || !animated ? 1 : 0)
+                    .scaleEffect(lit || !animated ? 1 : 0.5, anchor: .center)
+                    .animation(.spring(duration: 0.5, bounce: 0.35).delay(Double(offset + w) * 0.014), value: lit)
+                    .id(offset + w)
+                }
+            }
+            .scrollTargetLayout()
+        }
+    }
+
+    /// The week containing today, or the last week for a past year.
+    private func currentWeek(in weeks: [[Date?]]) -> Int {
+        weeks.firstIndex { $0.contains { $0?.dayKey == today } } ?? weeks.count - 1
     }
 
     @ViewBuilder

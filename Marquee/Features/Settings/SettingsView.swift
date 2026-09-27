@@ -5,6 +5,9 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var editing: ServerConfig?
     @State private var latency: Duration?
+    @State private var tmdbDraft = ""
+    @State private var tmdbStatus: String?
+    @State private var tmdbChecking = false
 
     var body: some View {
         NavigationStack {
@@ -33,7 +36,19 @@ struct SettingsView: View {
                     }
                     .foregroundStyle(Theme.cool)
                 }
+
+                Section("TMDB") {
+                    HStack {
+                        SecureField("API Key", text: $tmdbDraft)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .onSubmit { Task { await saveTMDB() } }
+                        if tmdbChecking { ProgressView() }
+                        else if let tmdbStatus { Text(tmdbStatus).caption(11, tmdbStatus == "Connected" ? Theme.cool : Theme.secondary) }
+                    }
+                }
             }
+            .onAppear { tmdbDraft = model.tmdbKey }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -43,6 +58,19 @@ struct SettingsView: View {
             }
             .sheet(item: $editing) { ServerForm(server: $0) }
             .task(id: model.activeID) { latency = await model.client?.ping() }
+        }
+    }
+
+    private func saveTMDB() async {
+        let key = tmdbDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { model.tmdbKey = ""; tmdbStatus = nil; return }
+        tmdbChecking = true
+        defer { tmdbChecking = false }
+        if let error = await TMDB.shared.validate(key) {
+            tmdbStatus = error
+        } else {
+            model.tmdbKey = key
+            tmdbStatus = "Connected"
         }
     }
 

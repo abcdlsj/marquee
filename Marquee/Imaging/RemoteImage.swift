@@ -29,9 +29,16 @@ struct RemoteImage: View {
         return Self.buckets.first { $0 >= need } ?? Self.buckets.last!
     }
 
-    private var fullURL: URL? {
+    private struct LoadKey: Equatable {
+        let movie: String
+        let kind: ImageKind
+        let pixelWidth: Int?
+        let tmdb: String
+    }
+
+    private var loadKey: LoadKey? {
         guard width > 0 else { return nil }
-        return model.client?.imageURL(movie, kind, maxWidth: pixelWidth, quality: original ? 100 : 92)
+        return LoadKey(movie: movie.id, kind: kind, pixelWidth: pixelWidth, tmdb: model.tmdbKey)
     }
 
     var body: some View {
@@ -54,35 +61,41 @@ struct RemoteImage: View {
             }
             .clipped()
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-            .task(id: fullURL) { await load() }
+            .task(id: loadKey) { await load() }
     }
 
     private func load() async {
-        guard let url = fullURL else { return }
+        guard loadKey != nil else { return }
         if loadedFor != movie.id + kind.rawValue {
             // Same view reused for a different movie: drop the stale artwork. A mere size bucket change keeps it.
             full = nil
             preview = nil
             loadedFor = movie.id + kind.rawValue
         }
-        if let hit = ImagePipeline.shared.cached(url) {
-            full = hit
-            onLoad?(hit)
-            return
+        if kind != .logo, preview == nil, full == nil {
+            preview = await model.image(movie, kind, maxWidth: 48)
         }
-        if kind != .logo, preview == nil, let small = model.client?.imageURL(movie, kind, maxWidth: 48, quality: 60) {
-            preview = ImagePipeline.shared.cached(small)
-            if preview == nil { preview = try? await ImagePipeline.shared.image(small) }
+        guard let img = await model.image(movie, kind, maxWidth: pixelWidth), !Task.isCancelled else { return }
+        if full == nil {
+            withAnimation(.easeOut(duration: 0.45)) { full = img }
+        } else {
+            full = img
         }
-        guard let img = try? await ImagePipeline.shared.image(url), !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.45)) { full = img }
         onLoad?(img)
     }
 }
 
 extension AppModel {
+    /// Posters come from TMDB when a key is set and the movie has a TMDB id; everything else, and any
+    /// TMDB failure, falls back to Emby.
     func image(_ movie: Movie, _ kind: ImageKind, maxWidth: Int?) async -> UIImage? {
-        guard let url = client?.imageURL(movie, kind, maxWidth: maxWidth, quality: maxWidth == nil ? 100 : 92) else { return nil }
+        if kind == .primary, !tmdbKey.isEmpty, let id = movie.tmdbID,
+           let url = await TMDB.shared.posterURL(tmdbID: id, maxWidth: maxWidth),
+           let img = try? await ImagePipeline.shared.image(url) {
+            return img
+        }
+        let quality = maxWidth == nil ? 100 : (maxWidth! <= 48 ? 60 : 92)
+        guard let url = client?.imageURL(movie, kind, maxWidth: maxWidth, quality: quality) else { return nil }
         return try? await ImagePipeline.shared.image(url)
     }
 }

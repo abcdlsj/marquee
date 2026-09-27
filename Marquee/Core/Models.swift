@@ -15,6 +15,7 @@ nonisolated struct Movie: Identifiable, Hashable, Codable, Sendable {
     var imageTags: [String: String]?
     var backdropImageTags: [String]?
     var people: [Person]?
+    var providerIds: [String: String]?
     var userData: UserData?
 
     enum CodingKeys: String, CodingKey {
@@ -23,7 +24,7 @@ nonisolated struct Movie: Identifiable, Hashable, Codable, Sendable {
         case communityRating = "CommunityRating", criticRating = "CriticRating"
         case officialRating = "OfficialRating", runTimeTicks = "RunTimeTicks"
         case imageTags = "ImageTags", backdropImageTags = "BackdropImageTags"
-        case people = "People", userData = "UserData"
+        case people = "People", userData = "UserData", providerIds = "ProviderIds"
     }
 
     var isFavorite: Bool { userData?.isFavorite ?? false }
@@ -43,6 +44,7 @@ nonisolated struct Movie: Identifiable, Hashable, Codable, Sendable {
     var tagline: String? { taglines?.first.flatMap { $0.isEmpty ? nil : $0 } }
     var directors: [String] { people?.filter { $0.type == "Director" }.map(\.name) ?? [] }
     var cast: [String] { people?.filter { $0.type == "Actor" }.map(\.name) ?? [] }
+    var tmdbID: String? { providerIds?["Tmdb"] ?? providerIds?["tmdb"] }
     var hasLogo: Bool { imageTags?["Logo"] != nil }
     var hasBackdrop: Bool { !(backdropImageTags ?? []).isEmpty }
 

@@ -35,7 +35,7 @@ nonisolated final class EmbyClient: Sendable {
         self.session = session
     }
 
-    static let movieFields = "Overview,Genres,CommunityRating,CriticRating,OfficialRating,Taglines,ProductionYear,RunTimeTicks,OriginalTitle"
+    static let movieFields = "Overview,Genres,CommunityRating,CriticRating,OfficialRating,Taglines,ProductionYear,RunTimeTicks,OriginalTitle,ProviderIds"
 
     // MARK: Auth
 

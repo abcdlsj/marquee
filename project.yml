@@ -13,6 +13,7 @@ settings:
     MARQUEE_SEED_URL: ""
     MARQUEE_SEED_USER: ""
     MARQUEE_SEED_PASSWORD: ""
+    MARQUEE_SEED_TMDB_KEY: ""
 targets:
   Marquee:
     type: application
@@ -44,3 +45,4 @@ targets:
         MarqueeSeedURL: $(MARQUEE_SEED_URL)
         MarqueeSeedUser: $(MARQUEE_SEED_USER)
         MarqueeSeedPassword: $(MARQUEE_SEED_PASSWORD)
+        MarqueeSeedTMDBKey: $(MARQUEE_SEED_TMDB_KEY)

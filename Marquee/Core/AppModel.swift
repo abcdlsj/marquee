@@ -18,12 +18,23 @@ final class AppModel {
 
     var active: ServerConfig? { servers.first { $0.id == activeID } }
 
+    /// TMDB key (v3 key or v4 read token). Empty disables TMDB posters.
+    var tmdbKey: String = ServerStore.tmdbKey {
+        didSet {
+            ServerStore.tmdbKey = tmdbKey
+            let k = tmdbKey
+            Task { await TMDB.shared.setKey(k) }
+        }
+    }
+
     init() {
         servers = ServerStore.load()
         if servers.isEmpty, let seed = ServerStore.seed {
             servers = [seed]
             ServerStore.save(servers)
         }
+        let k = tmdbKey
+        Task { await TMDB.shared.setKey(k) }
         activeID = ServerStore.activeID.flatMap { id in servers.contains { $0.id == id } ? id : nil } ?? servers.first?.id
     }
 

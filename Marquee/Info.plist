@@ -24,6 +24,8 @@
 	<string>$(MARQUEE_SEED_NAME)</string>
 	<key>MarqueeSeedPassword</key>
 	<string>$(MARQUEE_SEED_PASSWORD)</string>
+	<key>MarqueeSeedTMDBKey</key>
+	<string>$(MARQUEE_SEED_TMDB_KEY)</string>
 	<key>MarqueeSeedURL</key>
 	<string>$(MARQUEE_SEED_URL)</string>
 	<key>MarqueeSeedUser</key>

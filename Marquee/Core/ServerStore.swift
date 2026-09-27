@@ -20,6 +20,25 @@ enum ServerStore {
     private static let activeKey = "marquee.activeServer"
 
     static func load() -> [ServerConfig] {
+        guard let data = read(account) else { return [] }
+        return (try? JSONDecoder().decode([ServerConfig].self, from: data)) ?? []
+    }
+
+    static func save(_ servers: [ServerConfig]) {
+        guard let data = try? JSONEncoder().encode(servers) else { return }
+        write(account, data)
+    }
+
+    static var tmdbKey: String {
+        get {
+            if let d = read("tmdb"), let s = String(data: d, encoding: .utf8) { return s }
+            let seeded = (Bundle.main.infoDictionary?["MarqueeSeedTMDBKey"] as? String ?? "").trimmingCharacters(in: .whitespaces)
+            return seeded
+        }
+        set { write("tmdb", Data(newValue.utf8)) }
+    }
+
+    private static func read(_ account: String) -> Data? {
         let q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -27,12 +46,11 @@ enum ServerStore {
             kSecReturnData as String: true,
         ]
         var out: CFTypeRef?
-        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let data = out as? Data else { return [] }
-        return (try? JSONDecoder().decode([ServerConfig].self, from: data)) ?? []
+        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess else { return nil }
+        return out as? Data
     }
 
-    static func save(_ servers: [ServerConfig]) {
-        guard let data = try? JSONEncoder().encode(servers) else { return }
+    private static func write(_ account: String, _ data: Data) {
         let q: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

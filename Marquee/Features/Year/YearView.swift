@@ -21,10 +21,11 @@ struct YearView: View {
                         stats: stats,
                         cell: HeatmapView.cellSize(width: width - 48),
                         selected: selectedDay,
+                        folded: false,
+                        inset: 24,
                         onSelect: { key in selectedDay = selectedDay == key ? nil : key }
                     )
                     .id(year)
-                    .padding(.horizontal, 24)
                     .padding(.top, 32)
                     .sensoryFeedback(.selection, trigger: selectedDay)
 
