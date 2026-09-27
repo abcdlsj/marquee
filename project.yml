@@ -1,0 +1,46 @@
+name: Marquee
+options:
+  bundleIdPrefix: com.abcdlsj
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MARQUEE_SEED_NAME: ""
+    MARQUEE_SEED_URL: ""
+    MARQUEE_SEED_USER: ""
+    MARQUEE_SEED_PASSWORD: ""
+targets:
+  Marquee:
+    type: application
+    platform: iOS
+    sources:
+      - Marquee
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.abcdlsj.marquee
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_PREVIEWS: YES
+    info:
+      path: Marquee/Info.plist
+      properties:
+        CFBundleDisplayName: Marquee
+        UILaunchScreen:
+          UIColorName: ""
+        UIUserInterfaceStyle: Dark
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSMotionUsageDescription: 海报随手机倾斜产生景深效果
+        NSPhotoLibraryAddUsageDescription: 保存生成的分享海报到相册
+        MarqueeSeedName: $(MARQUEE_SEED_NAME)
+        MarqueeSeedURL: $(MARQUEE_SEED_URL)
+        MarqueeSeedUser: $(MARQUEE_SEED_USER)
+        MarqueeSeedPassword: $(MARQUEE_SEED_PASSWORD)
