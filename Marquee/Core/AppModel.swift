@@ -146,7 +146,7 @@ final class AppModel {
     }
 
     func loadDetail(_ movie: Movie) async {
-        guard let client, let full = try? await client.movie(movie.id) else { return }
+        guard details[movie.id] == nil, let client, let full = try? await client.movie(movie.id) else { return }
         details[movie.id] = full
     }
 

@@ -29,6 +29,7 @@ struct HomeView: View {
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
             .background { PosterAura(movie: wall ? nil : focused) }
             .toolbar(.hidden, for: .navigationBar)
+            .task(id: focused?.id) { if let focused { await model.loadDetail(focused) } }
             .sheet(isPresented: $showSettings) { SettingsView().presentationDetents([.medium, .large]) }
         }
     }
@@ -86,33 +87,67 @@ struct HomeView: View {
 
             caption
                 .frame(height: 72, alignment: .top)
-                .padding(.top, 14)
+                .padding(.top, 8)
             Spacer(minLength: 0)
         }
     }
 
+    /// Wall label under the piece, set to the poster's width: title and index on one line,
+    /// then a row of specs.
     private var caption: some View {
-        VStack(spacing: 6) {
-            if let m = focused {
-                Text(m.name)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(Theme.fg)
-                    .lineLimit(1)
-                Text([m.year.map(String.init), m.runtimeMinutes.map { "\($0) min" }].compactMap { $0 }.joined(separator: "  ·  "))
-                    .caption(12, Theme.secondary)
-                Text(String(format: "%d / %d", (favorites.firstIndex(of: m) ?? 0) + 1, favorites.count))
-                    .caption(10.5, Theme.secondary)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 5)
-                    .glassEffect(.regular, in: .capsule)
-                    .padding(.top, 8)
+        VStack(alignment: .leading, spacing: 12) {
+            if let f = focused {
+                let m = model.current(f)
+                HStack(alignment: .center, spacing: 12) {
+                    Text(m.name)
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.fg)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text(String(format: "%d / %d", (favorites.firstIndex(of: f) ?? 0) + 1, favorites.count))
+                        .caption(10.5, Theme.secondary)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .glassEffect(.regular, in: .capsule)
+                }
+                HStack(alignment: .top, spacing: 0) {
+                    ForEach(Array(specs(m).enumerated()), id: \.offset) { i, spec in
+                        if i > 0 {
+                            Rectangle().fill(Theme.hairline).frame(width: 0.5, height: 26).padding(.horizontal, 12)
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(spec.label).caption(9.5)
+                            Text(spec.value)
+                                .font(.system(size: 13, weight: .regular))
+                                .monospacedDigit()
+                                .foregroundStyle(spec.active ? Theme.cool : Theme.fg.opacity(0.85))
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
             }
         }
-        .padding(.horizontal, 40)
+        .frame(width: posterWidth, alignment: .leading)
         .contentTransition(.opacity)
         .animation(.smooth(duration: 0.3), value: focused?.id)
+    }
+
+    private struct Spec { let label: String; let value: String; var active = false }
+
+    private func specs(_ m: Movie) -> [Spec] {
+        var out: [Spec] = []
+        if let y = m.year { out.append(Spec(label: "Year", value: String(y))) }
+        if let r = m.runtimeMinutes { out.append(Spec(label: "Runtime", value: "\(r) min")) }
+        if let c = m.communityRating { out.append(Spec(label: "Rating", value: String(format: "%.1f", c))) }
+        if let d = m.playedDate {
+            out.append(Spec(label: "Watched", value: "\(MonthName.en[Calendar.current.component(.month, from: d) - 1]) \(Calendar.current.component(.day, from: d))", active: true))
+        } else if let g = m.genres?.first {
+            out.append(Spec(label: "Genre", value: g))
+        }
+        return out
     }
 }
 

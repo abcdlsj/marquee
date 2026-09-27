@@ -99,9 +99,11 @@ struct MovieLink<Label: View>: View {
                 Task { await model.setPlayed(m, at: m.isPlayed ? nil : .now) }
             }
         } preview: {
+            // The preview is hosted outside this view tree and doesn't inherit the environment.
             RemoteImage(movie: movie)
                 .aspectRatio(2 / 3, contentMode: .fit)
                 .frame(width: 320)
+                .environment(model)
         }
     }
 }

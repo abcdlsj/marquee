@@ -29,8 +29,10 @@ actor TMDB {
     var isEnabled: Bool { key != nil }
 
     /// Image URL for a poster at roughly `maxWidth` pixels; nil width asks for the original.
-    func posterURL(tmdbID: String, maxWidth: Int?) async -> URL? {
-        guard let path = await posterPath(tmdbID) else { return nil }
+    /// With `lookup: false` only an already-resolved poster is used (no network).
+    func posterURL(tmdbID: String, maxWidth: Int?, lookup: Bool = true) async -> URL? {
+        let resolved = lookup ? await posterPath(tmdbID) : paths[tmdbID].flatMap { $0.isEmpty ? nil : $0 }
+        guard key != nil, let path = resolved else { return nil }
         let size = switch maxWidth {
         case .some(let w) where w <= 92: "w92"
         case .some(let w) where w <= 342: "w342"

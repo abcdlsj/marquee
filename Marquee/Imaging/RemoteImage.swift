@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Emby artwork that fills its frame. Measures itself, requests exactly the pixel width it
-/// needs (snapped to a few buckets so caches hit), shows a blurred 48px preview first,
-/// then fades the full-resolution image in.
+/// needs (snapped to a few buckets so caches hit). Cached artwork appears at once; otherwise a
+/// blurred 48px preview shows first and the full-resolution image fades in.
 struct RemoteImage: View {
     let movie: Movie
     var kind: ImageKind = .primary
@@ -72,6 +72,12 @@ struct RemoteImage: View {
             preview = nil
             loadedFor = movie.id + kind.rawValue
         }
+        if full == nil, let hit = await model.cachedImage(movie, kind, maxWidth: pixelWidth) {
+            // Cached: show it outright, no blur-up.
+            full = hit
+            onLoad?(hit)
+            return
+        }
         if kind != .logo, preview == nil, full == nil {
             preview = await model.image(movie, kind, maxWidth: 48)
         }
@@ -86,16 +92,31 @@ struct RemoteImage: View {
 }
 
 extension AppModel {
-    /// Posters come from TMDB when a key is set and the movie has a TMDB id; everything else, and any
-    /// TMDB failure, falls back to Emby.
-    func image(_ movie: Movie, _ kind: ImageKind, maxWidth: Int?) async -> UIImage? {
+    /// Candidate URLs, best first: the TMDB poster (when a key is set and the movie has a TMDB id), then Emby.
+    private func artworkURLs(_ movie: Movie, _ kind: ImageKind, maxWidth: Int?, lookup: Bool) async -> [URL] {
+        var urls: [URL] = []
         if kind == .primary, !tmdbKey.isEmpty, let id = movie.tmdbID,
-           let url = await TMDB.shared.posterURL(tmdbID: id, maxWidth: maxWidth),
-           let img = try? await ImagePipeline.shared.image(url) {
-            return img
+           let url = await TMDB.shared.posterURL(tmdbID: id, maxWidth: maxWidth, lookup: lookup) {
+            urls.append(url)
         }
         let quality = maxWidth == nil ? 100 : (maxWidth! <= 48 ? 60 : 92)
-        guard let url = client?.imageURL(movie, kind, maxWidth: maxWidth, quality: quality) else { return nil }
-        return try? await ImagePipeline.shared.image(url)
+        if let url = client?.imageURL(movie, kind, maxWidth: maxWidth, quality: quality) { urls.append(url) }
+        return urls
+    }
+
+    /// Loads artwork, falling back from TMDB to Emby on any failure.
+    func image(_ movie: Movie, _ kind: ImageKind, maxWidth: Int?) async -> UIImage? {
+        for url in await artworkURLs(movie, kind, maxWidth: maxWidth, lookup: true) {
+            if let img = try? await ImagePipeline.shared.image(url) { return img }
+        }
+        return nil
+    }
+
+    /// Artwork already in the memory or disk cache; never hits the network.
+    func cachedImage(_ movie: Movie, _ kind: ImageKind, maxWidth: Int?) async -> UIImage? {
+        for url in await artworkURLs(movie, kind, maxWidth: maxWidth, lookup: false) {
+            if let img = await ImagePipeline.shared.cachedImage(url) { return img }
+        }
+        return nil
     }
 }
