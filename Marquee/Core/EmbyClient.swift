@@ -97,10 +97,10 @@ nonisolated final class EmbyClient: Sendable {
         return data
     }
 
-    private func movies(_ query: [String: String]) async throws -> [Movie] {
+    private func movies(_ query: [String: String], types: String = "Movie") async throws -> [Movie] {
         var q = query
         q["Recursive"] = "true"
-        q["IncludeItemTypes"] = "Movie"
+        q["IncludeItemTypes"] = types
         q["Fields"] = Self.movieFields
         q["EnableImageTypes"] = "Primary,Backdrop,Logo,Thumb"
         let data = try await send("GET", "Users/\(userID)/Items", q)
@@ -116,13 +116,13 @@ nonisolated final class EmbyClient: Sendable {
     /// Some reverse proxies in front of Emby reject `Limit` ≥ 100 (404), so large lists are paged.
     private static let pageSize = 50
 
-    private func allMovies(_ query: [String: String], cap: Int = 2000) async throws -> [Movie] {
+    private func allMovies(_ query: [String: String], types: String = "Movie", cap: Int = 2000) async throws -> [Movie] {
         var out: [Movie] = []
         while out.count < cap {
             var q = query
             q["StartIndex"] = "\(out.count)"
             q["Limit"] = "\(Self.pageSize)"
-            let page = try await movies(q)
+            let page = try await movies(q, types: types)
             out += page
             if page.count < Self.pageSize { break }
         }
@@ -143,6 +143,11 @@ nonisolated final class EmbyClient: Sendable {
 
     func played() async throws -> [Movie] {
         try await allMovies(["Filters": "IsPlayed", "SortBy": "DatePlayed", "SortOrder": "Descending"])
+    }
+
+    /// Played episodes. Note: some servers omit SeriesId/SeriesName in list responses; see AppModel.enrich.
+    func playedEpisodes() async throws -> [Movie] {
+        try await allMovies(["Filters": "IsPlayed", "SortBy": "DatePlayed", "SortOrder": "Descending"], types: "Episode")
     }
 
     func movie(_ id: String) async throws -> Movie {

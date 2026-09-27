@@ -8,10 +8,10 @@ struct YearView: View {
     @State private var width: CGFloat = 400
     @State private var showShare = false
 
-    private var years: [Int] { YearStats.years(from: model.played) }
+    private var years: [Int] { YearStats.years(from: model.played + model.episodes) }
 
     var body: some View {
-        let stats = YearStats(year: year, played: model.played)
+        let stats = YearStats(year: year, played: model.played, episodes: model.episodes)
         CinemaStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
@@ -29,15 +29,15 @@ struct YearView: View {
                     .padding(.top, 32)
                     .sensoryFeedback(.selection, trigger: selectedDay)
 
-                    if let day = selectedDay, let movies = stats.byDay[day] {
-                        dayList(movies)
+                    if let day = selectedDay, let items = stats.byDay[day] {
+                        dayList(items)
                             .padding(.top, 20)
                             .transition(.opacity.combined(with: .move(edge: .top)))
                     }
 
                     VStack(alignment: .leading, spacing: 36) {
                         ForEach(stats.months, id: \.month) { entry in
-                            MonthSection(month: entry.month, movies: entry.movies)
+                            MonthSection(entry: entry)
                         }
                     }
                     .padding(.top, 48)
@@ -72,7 +72,7 @@ struct YearView: View {
             .buttonStyle(.glass)
             Spacer()
             GlassIcon(systemName: "square.and.arrow.up") { showShare = true }
-                .disabled(stats.count == 0)
+                .disabled(stats.isEmpty)
         }
         .padding(.horizontal, 20)
         .padding(.top, 4)
@@ -81,9 +81,9 @@ struct YearView: View {
     private func statRow(_ s: YearStats) -> some View {
         HStack(alignment: .top, spacing: 0) {
             stat(s.count, "films")
+            stat(s.episodeCount, "episodes")
             stat(s.hours, "hours")
             stat(s.activeDays, "days")
-            stat(s.longestStreak, "streak")
         }
         .padding(.horizontal, 24)
     }
@@ -100,52 +100,77 @@ struct YearView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func dayList(_ movies: [Movie]) -> some View {
-        GlassEffectContainer(spacing: 10) {
+    private func dayList(_ items: [Movie]) -> some View {
+        let films = items.filter { !$0.isEpisode }
+        let series = YearStats.group(items.filter(\.isEpisode))
+        return GlassEffectContainer(spacing: 10) {
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(movies) { m in
+                ForEach(films) { m in
                     MovieLink(movie: m, source: "day-\(m.id)", cornerRadius: 18) {
-                        HStack(spacing: 14) {
-                            Poster(movie: m, cornerRadius: 3).frame(width: 40)
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(m.name).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.fg)
-                                Text(m.playedDate?.dotted ?? "").caption(11).monospacedDigit()
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.tertiary)
-                        }
-                        .padding(10)
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 18))
-                        .glassEffectTransition(.materialize)
+                        dayRow(poster: m, title: m.name, detail: m.playedDate?.dotted ?? "", chevron: true)
                     }
+                }
+                ForEach(series) { entry in
+                    dayRow(poster: entry.poster, title: entry.poster.name,
+                           detail: entry.episodes.reversed().compactMap(\.episodeCode).joined(separator: ", "),
+                           chevron: false)
                 }
             }
         }
         .padding(.horizontal, 20)
     }
+
+    private func dayRow(poster: Movie, title: String, detail: String, chevron: Bool) -> some View {
+        HStack(spacing: 14) {
+            Poster(movie: poster, cornerRadius: 3).frame(width: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.fg).lineLimit(1)
+                Text(detail).caption(11).monospacedDigit().lineLimit(2)
+            }
+            Spacer()
+            if chevron {
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.tertiary)
+            }
+        }
+        .padding(10)
+        .glassEffect(chevron ? .regular.interactive() : .regular, in: .rect(cornerRadius: 18))
+        .glassEffectTransition(.materialize)
+    }
 }
 
 private struct MonthSection: View {
-    let month: Int
-    let movies: [Movie]
+    let entry: YearStats.MonthEntry
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3)
+
+    private var tally: String {
+        let eps = entry.series.reduce(0) { $0 + $1.episodes.count }
+        return [entry.films.isEmpty ? nil : "\(entry.films.count) \(entry.films.count == 1 ? "film" : "films")", eps == 0 ? nil : "\(eps) ep"]
+            .compactMap { $0 }.joined(separator: "  ·  ")
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text(MonthName.full[month - 1]).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.fg)
+                Text(MonthName.full[entry.month - 1]).font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.fg)
                 Spacer()
-                Text("\(movies.count)").caption(12).monospacedDigit()
+                Text(tally).caption(12).monospacedDigit()
             }
             LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(movies) { m in
+                ForEach(entry.films) { m in
                     MovieLink(movie: m, source: "month-\(m.id)") {
                         VStack(alignment: .leading, spacing: 6) {
                             Poster(movie: m, cornerRadius: 3)
                             if let d = m.playedDate {
-                                Text("\(MonthName.en[month - 1]) \(Calendar.current.component(.day, from: d))").caption(10.5).monospacedDigit()
+                                Text("\(MonthName.en[entry.month - 1]) \(Calendar.current.component(.day, from: d))")
+                                    .caption(10.5).monospacedDigit()
                             }
                         }
+                    }
+                }
+                ForEach(entry.series) { series in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Poster(movie: series.poster, cornerRadius: 3)
+                        Text("\(series.episodes.count) ep").caption(10.5).monospacedDigit()
                     }
                 }
             }

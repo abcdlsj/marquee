@@ -6,7 +6,7 @@ struct YearShareStudio: View {
     @State private var posters: [String: UIImage] = [:]
     @State private var ready = false
 
-    private var picks: [Movie] { Array(stats.movies.suffix(12).reversed()) }
+    private var picks: [Movie] { stats.recentPosters(8) }
 
     var body: some View {
         ShareStage(titles: ["Black", "White"], ready: ready, exportName: "\(stats.year)") { i in
@@ -42,6 +42,7 @@ struct YearTemplate: View {
 
             HStack(alignment: .top, spacing: 0) {
                 stat(stats.count, "films")
+                stat(stats.episodeCount, "episodes")
                 stat(stats.hours, "hours")
                 stat(stats.activeDays, "days")
             }

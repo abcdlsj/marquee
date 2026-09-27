@@ -98,8 +98,8 @@ struct HeatmapView: View {
     private func color(_ n: Int, future: Bool) -> Color {
         switch n {
         case 0: ink.opacity(future ? 0.04 : 0.09)
-        case 1: accent.opacity(0.82)
-        case 2: accent.opacity(0.92)
+        case 1: accent.opacity(0.55)
+        case 2...3: accent.opacity(0.78)
         default: accent
         }
     }

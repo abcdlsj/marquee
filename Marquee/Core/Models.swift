@@ -16,6 +16,13 @@ nonisolated struct Movie: Identifiable, Hashable, Codable, Sendable {
     var backdropImageTags: [String]?
     var people: [Person]?
     var providerIds: [String: String]?
+    var type: String?
+    var seriesId: String?
+    var seriesName: String?
+    var seriesPrimaryImageTag: String?
+    /// Episode number / season number for episodes.
+    var indexNumber: Int?
+    var parentIndexNumber: Int?
     var userData: UserData?
 
     enum CodingKeys: String, CodingKey {
@@ -25,6 +32,9 @@ nonisolated struct Movie: Identifiable, Hashable, Codable, Sendable {
         case officialRating = "OfficialRating", runTimeTicks = "RunTimeTicks"
         case imageTags = "ImageTags", backdropImageTags = "BackdropImageTags"
         case people = "People", userData = "UserData", providerIds = "ProviderIds"
+        case type = "Type", seriesId = "SeriesId", seriesName = "SeriesName"
+        case seriesPrimaryImageTag = "SeriesPrimaryImageTag"
+        case indexNumber = "IndexNumber", parentIndexNumber = "ParentIndexNumber"
     }
 
     var isFavorite: Bool { userData?.isFavorite ?? false }
@@ -47,6 +57,24 @@ nonisolated struct Movie: Identifiable, Hashable, Codable, Sendable {
     var tmdbID: String? { providerIds?["Tmdb"] ?? providerIds?["tmdb"] }
     var hasLogo: Bool { imageTags?["Logo"] != nil }
     var hasBackdrop: Bool { !(backdropImageTags ?? []).isEmpty }
+
+    var isEpisode: Bool { type == "Episode" }
+
+    /// Groups episodes; an episode without series info stands as its own group.
+    var seriesKey: String { seriesId ?? id }
+
+    /// The series as a poster-bearing item (falls back to the episode's own artwork).
+    var seriesPoster: Movie {
+        guard let seriesId else { return self }
+        return Movie(id: seriesId, name: seriesName ?? name,
+                     imageTags: seriesPrimaryImageTag.map { ["Primary": $0] }, type: "Series")
+    }
+
+    /// "S9 E35", "E35" or nil.
+    var episodeCode: String? {
+        guard let e = indexNumber else { return nil }
+        return parentIndexNumber.map { "S\($0) E\(e)" } ?? "E\(e)"
+    }
 
     static func == (a: Movie, b: Movie) -> Bool { a.id == b.id && a.userData == b.userData }
     func hash(into h: inout Hasher) { h.combine(id) }

@@ -2,47 +2,85 @@ import Foundation
 
 struct YearStats {
     let year: Int
-    /// Oldest first.
+    /// Films, oldest first.
     let movies: [Movie]
+    /// Episodes, oldest first. Series are counted by episode.
+    let episodes: [Movie]
+    /// Films and episodes by day.
     let byDay: [Int: [Movie]]
 
-    init(year: Int, played: [Movie]) {
+    struct SeriesEntry: Identifiable {
+        let poster: Movie
+        /// Newest first.
+        let episodes: [Movie]
+        var id: String { poster.id }
+    }
+
+    struct MonthEntry {
+        let month: Int
+        /// Newest first.
+        let films: [Movie]
+        let series: [SeriesEntry]
+    }
+
+    init(year: Int, played: [Movie], episodes: [Movie]) {
         self.year = year
         let cal = Calendar.current
-        movies = played
-            .filter { $0.playedDate.map { cal.component(.year, from: $0) } == year }
-            .sorted { $0.playedDate! < $1.playedDate! }
-        byDay = Dictionary(grouping: movies) { $0.playedDate!.dayKey }
+        func inYear(_ list: [Movie]) -> [Movie] {
+            list.filter { $0.playedDate.map { cal.component(.year, from: $0) } == year }
+                .sorted { $0.playedDate! < $1.playedDate! }
+        }
+        movies = inYear(played)
+        self.episodes = inYear(episodes)
+        byDay = Dictionary(grouping: movies + self.episodes) { $0.playedDate!.dayKey }
     }
 
     var count: Int { movies.count }
-    var hours: Int { Int((Double(movies.compactMap(\.runtimeMinutes).reduce(0, +)) / 60).rounded()) }
+    var episodeCount: Int { episodes.count }
+    var hours: Int {
+        let minutes = (movies + episodes).compactMap(\.runtimeMinutes).reduce(0, +)
+        return Int((Double(minutes) / 60).rounded())
+    }
     var activeDays: Int { byDay.count }
+    var isEmpty: Bool { movies.isEmpty && episodes.isEmpty }
 
-    var longestStreak: Int {
+    /// Months that have anything, newest first.
+    var months: [MonthEntry] {
         let cal = Calendar.current
-        let days = Set(movies.compactMap { $0.playedDate.map { cal.startOfDay(for: $0) } }).sorted()
-        var best = 0, run = 0
-        var prev: Date?
-        for d in days {
-            if let p = prev, cal.dateComponents([.day], from: p, to: d).day == 1 { run += 1 } else { run = 1 }
-            best = max(best, run)
-            prev = d
+        let films = Dictionary(grouping: movies) { cal.component(.month, from: $0.playedDate!) }
+        let eps = Dictionary(grouping: episodes) { cal.component(.month, from: $0.playedDate!) }
+        return Set(films.keys).union(eps.keys).sorted(by: >).map { m in
+            MonthEntry(month: m, films: (films[m] ?? []).reversed(), series: Self.group(eps[m] ?? []))
         }
-        return best
     }
 
-    /// (month 1…12, movies) for months that have any, newest first.
-    var months: [(month: Int, movies: [Movie])] {
-        let cal = Calendar.current
-        let g = Dictionary(grouping: movies) { cal.component(.month, from: $0.playedDate!) }
-        return g.keys.sorted(by: >).map { ($0, g[$0]!.reversed()) }
+    /// Episodes folded by series, most recently watched series first.
+    static func group(_ episodes: [Movie]) -> [SeriesEntry] {
+        let newest = episodes.sorted { $0.playedDate! > $1.playedDate! }
+        var order: [String] = []
+        var groups: [String: [Movie]] = [:]
+        for e in newest {
+            if groups[e.seriesKey] == nil { order.append(e.seriesKey) }
+            groups[e.seriesKey, default: []].append(e)
+        }
+        return order.map { SeriesEntry(poster: groups[$0]![0].seriesPoster, episodes: groups[$0]!) }
     }
 
+    /// Distinct posters (films, and series for episodes), most recent first.
+    func recentPosters(_ limit: Int) -> [Movie] {
+        var seen = Set<String>()
+        var out: [Movie] = []
+        for item in (movies + episodes).sorted(by: { $0.playedDate! > $1.playedDate! }) {
+            let p = item.isEpisode ? item.seriesPoster : item
+            if seen.insert(p.id).inserted { out.append(p) }
+            if out.count == limit { break }
+        }
+        return out
+    }
 
-    static func years(from played: [Movie]) -> [Int] {
+    static func years(from items: [Movie]) -> [Int] {
         let cal = Calendar.current
-        var ys = Set(played.compactMap { $0.playedDate.map { cal.component(.year, from: $0) } })
+        var ys = Set(items.compactMap { $0.playedDate.map { cal.component(.year, from: $0) } })
         ys.insert(cal.component(.year, from: .now))
         return ys.sorted()
     }
