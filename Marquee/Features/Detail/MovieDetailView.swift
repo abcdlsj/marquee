@@ -28,6 +28,7 @@ struct MovieDetailView: View {
             .padding(.bottom, 60)
         }
         .scrollIndicators(.hidden)
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .background { PosterAura(movie: movie, intensity: 0.35) }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .ignoresSafeArea(edges: .top)

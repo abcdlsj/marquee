@@ -18,45 +18,37 @@ struct ShareStage<Canvas: View>: View {
     @State private var rendered: UIImage?
     @State private var savedPulse = 0
     @State private var saved = false
+    @Namespace private var glass
 
     var body: some View {
         VStack(spacing: 20) {
             HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").frame(width: 36, height: 36)
-                }
+                GlassIcon(systemName: "xmark") { dismiss() }
                 Spacer()
-                Button { save() } label: {
-                    Image(systemName: saved ? "checkmark" : "arrow.down.to.line")
-                        .contentTransition(.symbolEffect(.replace))
-                        .frame(width: 36, height: 36)
-                }
-                .disabled(rendered == nil)
-                if let rendered {
-                    let image = Image(uiImage: rendered)
-                    ShareLink(item: image, preview: SharePreview(exportName, image: image)) {
-                        Image(systemName: "square.and.arrow.up").frame(width: 36, height: 36)
+                GlassEffectContainer(spacing: 8) {
+                    HStack(spacing: 8) {
+                        GlassIcon(systemName: saved ? "checkmark" : "arrow.down.to.line", active: saved) { save() }
+                            .disabled(rendered == nil)
+                        if let rendered {
+                            let image = Image(uiImage: rendered)
+                            ShareLink(item: image, preview: SharePreview(exportName, image: image)) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 15, weight: .medium))
+                                    .frame(width: 22, height: 22)
+                            }
+                            .buttonStyle(.glass)
+                            .buttonBorderShape(.circle)
+                            .glassEffectTransition(.materialize)
+                        }
                     }
                 }
             }
-            .font(.system(size: 16))
-            .foregroundStyle(Theme.fg)
-            .buttonStyle(.plain)
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 20)
 
             stage
 
-            HStack(spacing: 22) {
-                ForEach(titles.indices, id: \.self) { i in
-                    Button { withAnimation(.smooth) { page = i } } label: {
-                        Text(titles[i])
-                            .font(.system(size: 13, weight: page == i ? .semibold : .regular))
-                            .foregroundStyle(page == i ? Theme.fg : Theme.tertiary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.bottom, 8)
+            templatePicker
+                .padding(.bottom, 8)
         }
         .background(Color.black.ignoresSafeArea())
         .task(id: RenderKey(page: page, ready: ready)) { render() }
@@ -65,6 +57,26 @@ struct ShareStage<Canvas: View>: View {
     }
 
     private struct RenderKey: Equatable { let page: Int; let ready: Bool }
+
+    /// Plain labels; a glass lens slides (and morphs) to the selected one.
+    private var templatePicker: some View {
+        GlassEffectContainer(spacing: 0) {
+            HStack(spacing: 0) {
+                ForEach(titles.indices, id: \.self) { i in
+                    Button { withAnimation(.bouncy(duration: 0.4)) { page = i } } label: {
+                        Text(titles[i])
+                            .font(.system(size: 13, weight: page == i ? .semibold : .regular))
+                            .foregroundStyle(page == i ? Theme.fg : Theme.secondary)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 9)
+                            .glassEffect(page == i ? .regular.interactive() : .identity, in: .capsule)
+                            .glassEffectID(page == i ? "selection" : "option-\(i)", in: glass)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
 
     private var stage: some View {
         GeometryReader { geo in

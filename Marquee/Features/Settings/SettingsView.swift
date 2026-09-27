@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var tmdbDraft = ""
     @State private var tmdbStatus: String?
     @State private var tmdbChecking = false
+    @State private var editingTMDB = false
 
     var body: some View {
         NavigationStack {
@@ -38,17 +39,41 @@ struct SettingsView: View {
                 }
 
                 Section("TMDB") {
-                    HStack {
-                        SecureField("API Key", text: $tmdbDraft)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .onSubmit { Task { await saveTMDB() } }
-                        if tmdbChecking { ProgressView() }
-                        else if let tmdbStatus { Text(tmdbStatus).caption(11, tmdbStatus == "Connected" ? Theme.cool : Theme.secondary) }
+                    if model.tmdbKey.isEmpty || editingTMDB {
+                        HStack {
+                            SecureField("API Key", text: $tmdbDraft)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .onSubmit { Task { await saveTMDB() } }
+                            if tmdbChecking { ProgressView() }
+                            else if let tmdbStatus { Text(tmdbStatus).caption(11, Theme.secondary) }
+                        }
+                        if editingTMDB {
+                            Button("Cancel") { editingTMDB = false; tmdbDraft = ""; tmdbStatus = nil }
+                                .foregroundStyle(Theme.secondary)
+                        }
+                    } else {
+                        HStack(spacing: 10) {
+                            Image(systemName: tmdbStatus == nil ? "checkmark.seal.fill" : "exclamationmark.circle")
+                                .foregroundStyle(tmdbStatus == nil ? Theme.cool : Theme.secondary)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(tmdbStatus ?? "Connected").font(.system(size: 15, weight: .medium)).foregroundStyle(Theme.fg)
+                                Text("Key ••••\(model.tmdbKey.suffix(4))").caption(11).monospacedDigit()
+                            }
+                            Spacer()
+                            if tmdbChecking { ProgressView() }
+                        }
+                        .swipeActions {
+                            Button("Remove", systemImage: "trash", role: .destructive) {
+                                model.tmdbKey = ""; tmdbStatus = nil
+                            }
+                        }
+                        Button("Change Key") { editingTMDB = true }
+                            .foregroundStyle(Theme.cool)
                     }
                 }
             }
-            .onAppear { tmdbDraft = model.tmdbKey }
+            .task(id: model.tmdbKey) { await recheckTMDB() }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -69,9 +94,19 @@ struct SettingsView: View {
         if let error = await TMDB.shared.validate(key) {
             tmdbStatus = error
         } else {
+            tmdbStatus = nil
+            tmdbDraft = ""
+            editingTMDB = false
             model.tmdbKey = key
-            tmdbStatus = "Connected"
         }
+    }
+
+    /// A saved key is re-checked quietly on open; the row shows its state instead of asking again.
+    private func recheckTMDB() async {
+        guard !model.tmdbKey.isEmpty, !editingTMDB else { return }
+        tmdbChecking = true
+        defer { tmdbChecking = false }
+        tmdbStatus = await TMDB.shared.validate(model.tmdbKey)
     }
 
     @ViewBuilder

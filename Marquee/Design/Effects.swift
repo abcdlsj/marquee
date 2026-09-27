@@ -29,3 +29,22 @@ struct PosterAura: View {
         .allowsHitTesting(false)
     }
 }
+
+/// Circular Liquid Glass icon button; `active` tints the glass with the accent.
+struct GlassIcon: View {
+    let systemName: String
+    var active = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 15, weight: .medium))
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: 22, height: 22)
+        }
+        .buttonStyle(.glass)
+        .buttonBorderShape(.circle)
+        .tint(active ? Theme.cool.opacity(0.35) : nil)
+    }
+}

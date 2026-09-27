@@ -62,22 +62,19 @@ struct YearView: View {
                     ForEach(years.reversed(), id: \.self) { Text(String($0)).tag($0) }
                 }
             } label: {
-                HStack(spacing: 5) {
-                    Text(String(year)).font(.system(size: 17, weight: .semibold)).monospacedDigit().foregroundStyle(Theme.fg)
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.tertiary)
+                HStack(spacing: 6) {
+                    Text(String(year)).font(.system(size: 16, weight: .semibold)).monospacedDigit().foregroundStyle(Theme.fg)
+                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.secondary)
                 }
+                .padding(.horizontal, 4)
+                .frame(height: 22)
             }
+            .buttonStyle(.glass)
             Spacer()
-            Button { showShare = true } label: {
-                Image(systemName: "square.and.arrow.up").frame(width: 36, height: 36)
-            }
-            .disabled(stats.count == 0)
+            GlassIcon(systemName: "square.and.arrow.up") { showShare = true }
+                .disabled(stats.count == 0)
         }
-        .font(.system(size: 16))
-        .foregroundStyle(Theme.secondary)
-        .buttonStyle(.plain)
-        .padding(.leading, 24)
-        .padding(.trailing, 14)
+        .padding(.horizontal, 20)
         .padding(.top, 4)
     }
 
@@ -104,21 +101,27 @@ struct YearView: View {
     }
 
     private func dayList(_ movies: [Movie]) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(movies) { m in
-                MovieLink(movie: m, source: "day-\(m.id)") {
-                    HStack(spacing: 14) {
-                        Poster(movie: m, cornerRadius: 2).frame(width: 40)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(m.name).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.fg)
-                            Text(m.playedDate?.dotted ?? "").caption(11).monospacedDigit()
+        GlassEffectContainer(spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(movies) { m in
+                    MovieLink(movie: m, source: "day-\(m.id)", cornerRadius: 18) {
+                        HStack(spacing: 14) {
+                            Poster(movie: m, cornerRadius: 3).frame(width: 40)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(m.name).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.fg)
+                                Text(m.playedDate?.dotted ?? "").caption(11).monospacedDigit()
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.tertiary)
                         }
-                        Spacer()
+                        .padding(10)
+                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 18))
+                        .glassEffectTransition(.materialize)
                     }
                 }
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
     }
 }
 

@@ -29,31 +29,25 @@ struct HomeView: View {
             .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
             .background { PosterAura(movie: wall ? nil : focused) }
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(isPresented: $showSettings) { SettingsView() }
+            .sheet(isPresented: $showSettings) { SettingsView().presentationDetents([.medium, .large]) }
         }
     }
 
     private var topBar: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(spacing: 8) {
             Text("Collection").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.fg)
             Text("\(favorites.count)").font(.system(size: 17, weight: .regular)).monospacedDigit().foregroundStyle(Theme.tertiary)
             Spacer()
-            Button {
-                withAnimation(.smooth(duration: 0.4)) { wall.toggle() }
-            } label: {
-                Image(systemName: wall ? "rectangle.portrait" : "square.grid.2x2")
-                    .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 36, height: 36)
-            }
-            Button { showSettings = true } label: {
-                Image(systemName: "ellipsis").frame(width: 36, height: 36)
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    GlassIcon(systemName: wall ? "rectangle.portrait" : "square.grid.2x2") {
+                        withAnimation(.smooth(duration: 0.4)) { wall.toggle() }
+                    }
+                    GlassIcon(systemName: "ellipsis") { showSettings = true }
+                }
             }
         }
-        .font(.system(size: 16, weight: .regular))
-        .foregroundStyle(Theme.secondary)
-        .buttonStyle(.plain)
-        .padding(.leading, 24)
-        .padding(.trailing, 14)
+        .padding(.horizontal, 20)
         .padding(.top, 4)
     }
 
@@ -107,9 +101,13 @@ struct HomeView: View {
                 Text([m.year.map(String.init), m.runtimeMinutes.map { "\($0) min" }].compactMap { $0 }.joined(separator: "  ·  "))
                     .caption(12, Theme.secondary)
                 Text(String(format: "%d / %d", (favorites.firstIndex(of: m) ?? 0) + 1, favorites.count))
-                    .caption(10.5)
+                    .caption(10.5, Theme.secondary)
                     .monospacedDigit()
-                    .padding(.top, 6)
+                    .contentTransition(.numericText())
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .glassEffect(.regular, in: .capsule)
+                    .padding(.top, 8)
             }
         }
         .padding(.horizontal, 40)

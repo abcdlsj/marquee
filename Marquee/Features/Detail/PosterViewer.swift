@@ -39,9 +39,24 @@ struct PosterViewer: View {
         }
         .overlay(alignment: .bottom) {
             if let p = pixelSize, !zoomed {
-                Text("\(Int(p.width)) × \(Int(p.height))").caption(10.5).monospacedDigit().padding(.bottom, 12)
+                Text("\(Int(p.width)) × \(Int(p.height))")
+                    .caption(10.5, Theme.secondary)
+                    .monospacedDigit()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .glassEffect(.regular, in: .capsule)
+                    .glassEffectTransition(.materialize)
+                    .padding(.bottom, 12)
             }
         }
+        .overlay(alignment: .topTrailing) {
+            if !zoomed {
+                GlassIcon(systemName: "xmark") { dismiss() }
+                    .padding(.trailing, 20)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.smooth, value: zoomed)
         .statusBarHidden()
         .onAppear { motion.start() }
         .onDisappear { motion.stop() }
